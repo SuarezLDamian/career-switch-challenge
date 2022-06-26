@@ -1,6 +1,6 @@
 # Career Switch Challenge
 
-Proyecto creado para el Challenge del programa Career Switch de Rooftop Academy
+Proyecto creado para el Challenge del programa Career Switch de Rooftop Academy.
 
 ## Instrucciones de instalación:
 

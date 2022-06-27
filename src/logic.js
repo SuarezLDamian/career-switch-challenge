@@ -1,33 +1,32 @@
-// import express from 'express';
-import * as dotenv from 'dotenv';
 import fetch from 'node-fetch';
 
-dotenv.config();
-
-const token = process.env.API_KEY;
-check(token);
-
-async function getValues(token) {
-    const response = await fetch(`https://rooftop-career-switch.herokuapp.com/blocks?token=${token}`)
-    const result = await response.json()
-    const arrayDesordenado = result.data
-    return arrayDesordenado;
+export async function getToken(email) {
+    const response = await fetch(`https://rooftop-career-switch.herokuapp.com/token?email=${email}`);
+    const result = await response.json();
+    const token = result.token;
+    return token;
 }
 
-async function check(token) {
-    let array = await getValues(token);
-    let arrayOrdenado = [];
+export async function getValues(token) {
+    const response = await fetch(`https://rooftop-career-switch.herokuapp.com/blocks?token=${token}`);
+    const result = await response.json();
+    const blocks = result.data;
+    return blocks;
+}
+
+export async function orderValues(blocks, token) {
+    let orderedBlocks = [];
     var requestsCount = 0;
 
-    console.log("El array inicial es: ", array);
-    console.log("Ordenando bloques...")
-    
-    for (let i = 0; i < array.length; i++) {        
-        for(let j = 0; j < array.length; j++) {
+    console.log("El array inicial es: ", blocks);
+    console.log("Ordenando bloques...");
+
+    for (let i = 0; i < blocks.length; i++) {        
+        for(let j = 0; j < blocks.length; j++) {
             
             let response;
 
-            if(arrayOrdenado.length == 0) {
+            if(orderedBlocks.length == 0) {
                 response = await fetch(`https://rooftop-career-switch.herokuapp.com/check?token=${token}`, {
                     method: "POST",
                     headers: {
@@ -37,8 +36,8 @@ async function check(token) {
                     body: JSON.stringify(
                         {
                             "blocks": [
-                                array[j],
-                                array[j+1]
+                                blocks[j],
+                                blocks[j+1]
                             ]
                         }
                     )
@@ -54,8 +53,8 @@ async function check(token) {
                     body: JSON.stringify(
                         {
                             "blocks": [
-                                arrayOrdenado[arrayOrdenado.length-1],
-                                array[j]
+                                orderedBlocks[orderedBlocks.length-1],
+                                blocks[j]
                             ]
                         }
                     )
@@ -65,26 +64,31 @@ async function check(token) {
             let result = await response.json();
 
             if(result.message === true) {
-                if(arrayOrdenado.length === 0) {
-                    arrayOrdenado.push(array[j])
-                    arrayOrdenado.push(array[j+1])
+                if(orderedBlocks.length == 0) {
+                    orderedBlocks.push(blocks[j]);
+                    orderedBlocks.push(blocks[j+1]);
                 }
                 else{
-                    arrayOrdenado.push(array[j])
+                    orderedBlocks.push(blocks[j]);
                 }
             }
 
             requestsCount = requestsCount + 1;
         }
-        console.log(`Iteración: ${i+1}, Array ordenado: ${arrayOrdenado}`);
+        console.log(`Iteración: ${i+1}, Array ordenado: ${orderedBlocks}`);
     }
 
     console.log("Cantidad de peticiones: ", requestsCount);
-    console.log("El array ordenado es:", arrayOrdenado)
+    console.log("El array ordenado es:", orderedBlocks);
 
-    const encodedString = arrayOrdenado.join("");
+    return orderedBlocks;
+}
 
-    let response = await fetch(`https://rooftop-career-switch.herokuapp.com/check?token=${token}`, {
+export async function check(orderedBlocks, token) {
+
+    const encodedString = orderedBlocks.join("");
+
+    const response = await fetch(`https://rooftop-career-switch.herokuapp.com/check?token=${token}`, {
         method: "POST",
         headers: {
         'Accept': 'application/json',
@@ -97,14 +101,13 @@ async function check(token) {
         )
     })
 
-    let result = await response.json();
+    const result = await response.json();
 
-    if(result.message === true) {
-        console.log("Los bloques están ordenados correctamente.");
-    }
-    else {
+    if(result.message != true) {
         console.log("Los bloques no están ordenados correctamente.");
+        return false;
     }
-    
-    return arrayOrdenado;
+
+    console.log("Los bloques están ordenados correctamente.");
+    return true;
 }
